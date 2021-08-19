@@ -1,0 +1,456 @@
+//Created by Ian (z5161724), July 2019
+//Assignment 1 19T2 COMP1511: CS Paint
+
+#include <stdio.h>
+
+//The dimensions of the canvas (20 rows x 36 columns).
+#define N_ROWS 20
+#define N_COLS 36
+
+//Shades
+#define BLACK 0
+#define WHITE 4
+
+//Define Commands
+#define LINE 1
+#define RECTANGLE 2
+#define SHADE 3
+#define COPYPASTE 4
+#define ADDITIVEBRUSH 5
+
+//Print out the canvas.
+void printCanvas(int canvas[N_ROWS][N_COLS]);
+//Set the entire canvas to be blank.
+void setBlankCanvas(int canvas[N_ROWS][N_COLS]);
+//Line Drawing
+void line(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int shade, int brushSwitch, int brush[3][3]);
+//Rectangle Drawing
+void rectangle(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int shade);
+//Copy Paste
+void copyPaste(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int targetRow, int targetCol);
+//Additive Brush
+void additiveBrush(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int brush[3][3]);
+//Returning the lesser of two values
+int min(int a, int b);
+//Returning the greater of two values
+int max(int a, int b);
+
+int main(void) {
+    int canvas[N_ROWS][N_COLS];
+    int command;
+    int startRow, startCol, endRow, endCol;
+    int targetRow, targetCol;
+    int newShade = BLACK;
+    int shade = BLACK;
+    int brushSwitch = 0;
+    int brush[3][3] = {0};
+    
+    setBlankCanvas(canvas);
+    
+    //input commands
+    while (scanf("%d", &command) != EOF) {
+    
+        //Line Drawing
+        if (command == LINE) {
+            scanf("%d %d %d %d", &startRow, &startCol, &endRow, &endCol);
+            line(canvas, startRow, startCol,
+                endRow, endCol, shade, brushSwitch, brush
+            );
+        }
+        
+        //Rectangle Drawing
+        else if (command == RECTANGLE) {
+            scanf("%d %d %d %d", &startRow, &startCol, &endRow, &endCol);
+            rectangle(canvas,startRow, startCol, endRow, endCol, shade);
+        }
+        
+        //Shade Change
+        else if (command == SHADE) {
+            scanf ("%d", &newShade);
+            if (newShade >= 0 && newShade <= 4) {
+                shade = newShade;
+                brushSwitch = 0;
+            }
+        }
+        
+        //Copy Paste
+        else if (command == COPYPASTE) {
+            scanf("%d %d %d %d %d %d", &startRow, &startCol,
+                &endRow, &endCol, &targetRow, &targetCol
+            );
+            copyPaste(canvas, startRow, startCol,
+                endRow, endCol, targetRow, targetCol
+            );
+        }
+        
+        //Additive Brush
+        else if (command == ADDITIVEBRUSH) {
+            scanf("%d %d %d %d %d %d %d %d %d",
+            &brush[0][0], &brush[0][1], &brush[0][2],
+            &brush[1][0], &brush[1][1], &brush[1][2],
+            &brush[2][0], &brush[2][1], &brush[2][2]);
+            brushSwitch = 1;
+        }
+    }
+    
+    //print the canvas using the function given in the starter code
+    printCanvas(canvas);
+    
+    return 0;
+}
+
+
+//Line Drawing
+void line(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int shade, int brushSwitch, int brush[3][3]) {
+    
+    //rejecting out of range inputs
+    if (startRow < 0 || startRow > N_ROWS - 1
+    || startCol < 0 || startCol > N_COLS - 1
+    || endRow < 0 || endRow > N_ROWS - 1
+    || endCol < 0 || endCol > N_COLS - 1) {
+        return;        
+    }
+        
+    //straight lines
+    if (startRow == endRow || startCol == endCol) {
+
+        //drawing vertical line
+        if (startCol == endCol) {
+            //left to right
+            if (startRow <= endRow) {
+                while (startRow <= endRow) {
+                    if (brushSwitch == 0) {
+                        canvas[startRow][startCol] = shade;
+                    }
+                    else {
+                        additiveBrush(canvas, 
+                            startRow, startCol, endRow, endCol, brush
+                        );
+                    }
+                    startRow++;
+                }
+            }
+            //right to left
+            else {
+                while (endRow <= startRow) {
+                    if (brushSwitch == 0) {
+                        canvas[endRow][endCol] = shade;
+                    }
+                    else {
+                        additiveBrush(canvas, 
+                            startRow, startCol, endRow, endCol, brush
+                        );
+                    }
+                    endRow++;
+                }
+            }
+        }
+        //drawing horizontal line
+        else if (startRow == endRow) {
+            //up to down
+            if (startCol <= endCol) {
+                while (startCol <= endCol) {
+                    if (brushSwitch == 0) {
+                        canvas[startRow][startCol] = shade;
+                    }
+                    else {
+                        additiveBrush(canvas, 
+                            startRow, startCol, endRow, endCol, brush
+                        );
+                    }
+                    startCol++;
+                }
+            }
+            //down to up
+            else {
+                while (endCol <= startCol) {
+                    if (brushSwitch == 0) {
+                        canvas[endRow][endCol] = shade;
+                    }
+                    else {
+                        additiveBrush(canvas, 
+                            startRow, startCol, endRow, endCol, brush
+                        );
+                    }
+                    endCol++;
+                }
+            }
+        }
+    }
+    
+    //printing diagonals
+    else if (endRow - startRow == endCol - startCol) {
+        //top left to bottom right
+        if (startRow < endRow) {
+            while (startRow < endRow + 1) {
+                if (brushSwitch == 0) {
+                    canvas[startRow][startCol] = shade;
+                }
+                else {
+                    additiveBrush(canvas, 
+                        startRow, startCol, endRow, endCol, brush
+                    );
+                }
+                startRow++;
+                startCol++;
+            }
+        }
+        //bottom right to top left
+        else if (startRow > endRow) {
+            while (startRow + 1 > endRow) {
+                if (brushSwitch == 0) {
+                    canvas[startRow][startCol] = shade;
+                }
+                else {
+                    additiveBrush(canvas, 
+                        startRow, startCol, endRow, endCol, brush
+                    );
+                }
+                startRow--;
+                startCol--;
+            }
+        }
+    }
+    else if (endRow - startRow == startCol - endCol) {
+        //top right to bottom left
+        if (startRow < endRow) {
+            while (startRow < endRow + 1) {
+                if (brushSwitch == 0) {
+                    canvas[startRow][startCol] = shade;
+                }
+                else {
+                    additiveBrush(canvas, 
+                        startRow, startCol, endRow, endCol, brush
+                    );
+                }
+                startRow++;
+                startCol--;
+            }
+        }
+        //bottom left to top right
+        else if (startRow > endRow) {
+            while (startRow + 1 > endRow) {
+                if (brushSwitch == 0) {
+                    canvas[startRow][startCol] = shade;
+                }
+                else {
+                    additiveBrush(canvas, 
+                        startRow, startCol, endRow, endCol, brush
+                    );
+                }
+                startRow--;
+                startCol++;
+            }
+        }
+    }
+    
+    return;
+}
+
+//Rectangle Drawing
+void rectangle(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int shade) {
+    
+    //rejecting out-of-bounds inputs
+    if (startRow < 0 || startRow > N_ROWS - 1
+    || startCol < 0 || startCol > N_COLS - 1
+    || endRow < 0 || endRow > N_ROWS - 1
+    || endCol < 0 || endCol > N_COLS - 1) {
+        return;        
+    }
+    
+    //making sure rectangles are drawn from top left to bottom right
+    if (endRow < startRow) {
+        endRow = endRow + startRow;
+        startRow = endRow - startRow;
+        endRow = endRow - startRow;
+    }
+    if (endCol < startCol) {
+        endCol = endCol + startCol;
+        startCol = endCol - startCol;
+        endCol = endCol - startCol;
+    }
+
+    //printing filled rectangle
+    while (startRow <= endRow) {
+        int loopCol = startCol;
+        while (loopCol <= endCol) {
+            canvas[startRow][loopCol] = shade;
+            loopCol++;
+        }
+        startRow++;
+    }
+    
+    return;
+}
+
+//Copy Paste
+void copyPaste(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int targetRow, int targetCol) {
+    int targetEndRow = targetRow + endRow - startRow;
+    int targetEndCol = targetCol + endCol - startCol;
+    
+    //rejecting out-of-bounds copying
+    if (startRow < 0 || startRow > N_ROWS - 1
+    || startCol < 0 || startCol > N_COLS - 1
+    || endRow < 0 || endRow > N_ROWS - 1
+    || endCol < 0 || endCol > N_COLS - 1) {
+        return;        
+    }
+    
+    //making sure rectangles are copied from top left to bottom right
+    if (endRow < startRow) {
+        endRow = endRow + startRow;
+        startRow = endRow - startRow;
+        endRow = endRow - startRow;
+    }
+    if (endCol < startCol) {
+        endCol = endCol + startCol;
+        startCol = endCol - startCol;
+        endCol = endCol - startCol;
+    }
+    
+    //rejecting out-of-bounds pasting
+    if (targetRow < 0 || targetRow > N_ROWS - 1
+    || targetCol < 0 || targetCol > N_COLS - 1
+    || targetEndRow > N_ROWS - 1 
+    || targetEndCol > N_COLS - 1) {
+        return;        
+    }
+    
+    //copying to another array
+    int copyArray[endRow - startRow + 1][endCol - startCol + 1];
+    int i = 0;
+    while (startRow <= endRow) {
+        int loopCol = startCol;
+        int j = 0;
+        while (loopCol <= endCol) {
+            copyArray[i][j] = canvas[startRow][loopCol];
+            loopCol++;
+            j++;
+        }
+        startRow++;
+        i++;
+    }
+    
+    //pasting onto canvas
+    i = 0;
+    while (targetRow <= targetEndRow) {
+        int loopCol = targetCol;
+        //int loopColCopy = startCol;
+        int j = 0;
+        while (loopCol <= targetEndCol) {
+            canvas[targetRow][loopCol] = copyArray[i][j];
+            loopCol++;
+            j++;
+        }
+        targetRow++;
+        i++;
+    }
+    
+    return;
+}
+
+//Additive Brush
+void additiveBrush(int canvas[N_ROWS][N_COLS], int startRow, int startCol,
+    int endRow, int endCol, int brush[3][3]) {
+    
+    //making sure all additives are in valid spaces
+    if (startRow - 1 >= 0 && startCol - 1 >= 0 &&
+        startRow + 1 <= N_ROWS - 1 && startCol + 1 <= N_COLS - 1) {
+        
+        //adding individual pixes, using min and max to validate pixels
+        canvas[startRow - 1][startCol - 1] =
+            min(max(canvas[startRow - 1][startCol - 1]
+                + brush[0][0], BLACK), WHITE);
+
+        canvas[startRow - 1][startCol] = 
+            min(max(canvas[startRow - 1][startCol]
+                + brush[0][1], BLACK), WHITE);
+
+        canvas[startRow - 1][startCol + 1] = 
+            min(max(canvas[startRow - 1][startCol + 1]
+                + brush[0][2], BLACK), WHITE);
+
+        canvas[startRow][startCol - 1] = 
+            min(max(canvas[startRow][startCol - 1]
+                + brush[1][0], BLACK), WHITE);
+
+        canvas[startRow][startCol] = 
+            min(max(canvas[startRow][startCol]
+                + brush[1][1], BLACK), WHITE);
+
+        canvas[startRow][startCol + 1] = 
+            min(max(canvas[startRow][startCol + 1]
+                + brush[1][2], BLACK), WHITE);
+
+        canvas[startRow + 1][startCol - 1] = 
+            min(max(canvas[startRow + 1][startCol - 1]
+                + brush[2][0], BLACK), WHITE);
+
+        canvas[startRow + 1][startCol] = 
+            min(max( canvas[startRow + 1][startCol]
+                + brush[2][1], BLACK), WHITE);
+
+        canvas[startRow + 1][startCol + 1] = 
+            min(max(canvas[startRow + 1][startCol + 1]
+                + brush[2][2], BLACK), WHITE);
+    }
+    
+    return;
+}
+
+//Function that returns the lesser of two values
+int min(int a, int b) {
+    if (a > b) {
+        return b;
+    }
+    else {
+        return a;
+    }
+}
+
+//Function that returns the greater of two values
+int max(int a, int b){
+    if (a > b) {
+        return a;
+    }
+    else {
+        return b;
+    }
+}
+
+//prints the canvas, by printing the integer value stored in
+//each element of the 2-dimensional canvas array.
+void printCanvas(int canvas[N_ROWS][N_COLS]) {
+    int row = 0;
+    while (row < N_ROWS) {
+        int col = 0;
+        while (col < N_COLS) {
+            printf("%d ", canvas[row][col]);
+            col++;
+        }
+        row++;
+        printf("\n");
+    }
+}
+
+
+//sets the entire canvas to be blank, by setting each element in the
+//2-dimensional canvas array to be WHITE
+void setBlankCanvas(int canvas[N_ROWS][N_COLS]) {
+    int row = 0;
+    while (row < N_ROWS) {
+        int col = 0;
+        while (col < N_COLS) {
+            canvas[row][col] = WHITE;
+            col++;
+        }
+        row++;
+    }
+}
